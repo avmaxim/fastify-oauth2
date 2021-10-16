@@ -54,6 +54,7 @@ const oauthPlugin = fp(function (fastify, options, next) {
 
   const name = options.name
   const credentials = options.credentials
+  const tokenUriParams = options.tokenUriParams
   const callbackUri = options.callbackUri
   const callbackUriParams = options.callbackUriParams || {}
   const scope = options.scope
@@ -84,21 +85,53 @@ const oauthPlugin = fp(function (fastify, options, next) {
   }
 
   const cbk = function (o, code, callback) {
-    return callbackify(o.oauth2.authorizationCode.getToken.bind(o.oauth2.authorizationCode, {
+    console.log(
+      '[FASTIFY OAUTH2 LIBRARY]: ',
+      'fastify[name]: ', o,
+      'code: ', code
+    )
+    console.log(
+      '[FASTIFY OAUTH2 LIBRARY]: ',
+      'o.oauth2.authorizationCode.getToken: ', o.oauth2.authorizationCode.getToken
+    )
+    console.log(
+      '[FASTIFY OAUTH2 LIBRARY]: ',
+      'tokenUriParams: ', tokenUriParams
+    )
+    const getTokenParams = {
       code: code,
-      redirect_uri: callbackUri
-    }))(callback)
+      redirect_uri: callbackUri,
+      ...tokenUriParams
+    }
+    return callbackify(o.oauth2.authorizationCode.getToken.bind(
+      o.oauth2.authorizationCode,
+      getTokenParams
+    ))(callback)
   }
 
   function getAccessTokenFromAuthorizationCodeFlowCallbacked (request, callback) {
     const code = request.query.code
     const state = request.query.state
 
+    console.log('[FASTIFY OAUTH2 LIBRARY]: ',
+      'getAccessTokenFromAuthorizationCodeFlowCallbacked: ',
+      'request.query: ',
+      JSON.stringify(request.query)
+    )
+
     checkStateFunction(state, function (err) {
+      console.log(
+        '[FASTIFY OAUTH2 LIBRARY]: ',
+        'checkStateFunction callback: ',
+        'state: ',
+        JSON.stringify(request.state)
+      )
+
       if (err) {
         callback(err)
         return
       }
+
       cbk(fastify[name], code, callback)
     })
   }
