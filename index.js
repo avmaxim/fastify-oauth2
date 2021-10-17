@@ -54,7 +54,7 @@ const oauthPlugin = fp(function (fastify, options, next) {
 
   const name = options.name
   const credentials = options.credentials
-  const tokenUriParams = options.tokenUriParams || {}
+  const secretsInTokenUri = options.secretsInTokenUri || false
   const callbackUri = options.callbackUri
   const callbackUriParams = options.callbackUriParams || {}
   const scope = options.scope
@@ -90,25 +90,20 @@ const oauthPlugin = fp(function (fastify, options, next) {
       'fastify[name]: ', o,
       'code: ', code
     )
-    console.log(
-      '[FASTIFY OAUTH2 LIBRARY]: ',
-      'tokenUriParams: ', tokenUriParams
-    )
     const getTokenParams = {
       code: code,
       redirect_uri: callbackUri,
-      ...tokenUriParams
+      ...(secretsInTokenUri && {
+        client_id: credentials.client.id,
+        client_secret: credentials.client.secret
+      })
     }
     console.log(
       '[FASTIFY OAUTH2 LIBRARY]: ',
       'getTokenParams: ', JSON.stringify(getTokenParams)
     )
     return callbackify(o.oauth2.authorizationCode.getToken.bind(
-      o.oauth2.authorizationCode, {
-        code: code,
-        redirect_uri: callbackUri,
-        ...tokenUriParams
-      }
+      o.oauth2.authorizationCode, { ...getTokenParams }
     ))(callback)
   }
 
