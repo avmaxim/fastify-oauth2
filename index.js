@@ -95,7 +95,8 @@ const oauthPlugin = fp(function (fastify, options, next) {
       redirect_uri: callbackUri,
       ...(secretsInTokenUri && {
         client_id: credentials.client.id,
-        client_secret: credentials.client.secret
+        client_secret: credentials.client.secret,
+        grant_type: 'authorization_code'
       })
     }
     console.log(
