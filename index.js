@@ -55,7 +55,6 @@ const oauthPlugin = fp(function (fastify, options, next) {
   const name = options.name
   const credentials = options.credentials
   const secretsInTokenUri = options.secretsInTokenUri || false
-  const responseMode = options.responseMode
   const grantType = options.grantType
   const callbackUri = options.callbackUri
   const callbackUriParams = options.callbackUriParams || {}
@@ -71,8 +70,7 @@ const oauthPlugin = fp(function (fastify, options, next) {
     const urlOptions = Object.assign({}, callbackUriParams, {
       redirect_uri: callbackUri,
       scope: scope,
-      state: state,
-      ...(responseMode && { response_mode: responseMode })
+      state: state
     })
     const authorizationUri = oauth2.authorizationCode.authorizeURL(urlOptions)
     return authorizationUri
