@@ -86,7 +86,7 @@ const oauthPlugin = fp(function (fastify, options, next) {
 
   const cbk = function (o, code, callback) {
     const getTokenParams = {
-      code: code,
+      code,
       redirect_uri: callbackUri,
       ...(secretsInTokenUri && {
         client_id: credentials.client.id,
