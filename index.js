@@ -55,6 +55,7 @@ const oauthPlugin = fp(function (fastify, options, next) {
   const name = options.name
   const credentials = options.credentials
   const secretsInTokenUri = options.secretsInTokenUri || false
+  const grantType = options.grantType
   const callbackUri = options.callbackUri
   const callbackUriParams = options.callbackUriParams || {}
   const scope = options.scope
@@ -66,13 +67,10 @@ const oauthPlugin = fp(function (fastify, options, next) {
 
   function generateAuthorizationUri (requestObject) {
     const state = generateStateFunction(requestObject)
-    const scopeName = Array.isArray(scope) ? scope.join(' ') : scope
-    const hasResponseMode = scopeName.includes('email') || scopeName.includes('name')
     const urlOptions = Object.assign({}, callbackUriParams, {
       redirect_uri: callbackUri,
       scope: scope,
-      state: state,
-      ...(hasResponseMode && { response_mode: 'form_post' })
+      state: state
     })
     const authorizationUri = oauth2.authorizationCode.authorizeURL(urlOptions)
     return authorizationUri
@@ -85,17 +83,16 @@ const oauthPlugin = fp(function (fastify, options, next) {
   }
 
   const cbk = function (o, code, callback) {
-    const getTokenParams = {
-      code,
-      redirect_uri: callbackUri,
-      ...(secretsInTokenUri && {
-        client_id: credentials.client.id,
-        client_secret: credentials.client.secret,
-        grant_type: 'authorization_code'
-      })
-    }
     return callbackify(o.oauth2.authorizationCode.getToken.bind(
-      o.oauth2.authorizationCode, { ...getTokenParams }
+      o.oauth2.authorizationCode, {
+        code,
+        redirect_uri: callbackUri,
+        ...(secretsInTokenUri && {
+          client_id: credentials.client.id,
+          client_secret: credentials.client.secret,
+          ...(grantType && { grant_type: grantType })
+        })
+      }
     ))(callback)
   }
 
