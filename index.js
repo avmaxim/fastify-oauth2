@@ -54,6 +54,7 @@ const oauthPlugin = fp(function (fastify, options, next) {
 
   const name = options.name
   const credentials = options.credentials
+  const secretsInTokenUri = options.secretsInTokenUri || false
   const callbackUri = options.callbackUri
   const callbackUriParams = options.callbackUriParams || {}
   const scope = options.scope
@@ -84,10 +85,18 @@ const oauthPlugin = fp(function (fastify, options, next) {
   }
 
   const cbk = function (o, code, callback) {
-    return callbackify(o.oauth2.authorizationCode.getToken.bind(o.oauth2.authorizationCode, {
-      code: code,
-      redirect_uri: callbackUri
-    }))(callback)
+    const getTokenParams = {
+      code,
+      redirect_uri: callbackUri,
+      ...(secretsInTokenUri && {
+        client_id: credentials.client.id,
+        client_secret: credentials.client.secret,
+        grant_type: 'authorization_code'
+      })
+    }
+    return callbackify(o.oauth2.authorizationCode.getToken.bind(
+      o.oauth2.authorizationCode, { ...getTokenParams }
+    ))(callback)
   }
 
   function getAccessTokenFromAuthorizationCodeFlowCallbacked (request, callback) {
@@ -99,6 +108,7 @@ const oauthPlugin = fp(function (fastify, options, next) {
         callback(err)
         return
       }
+
       cbk(fastify[name], code, callback)
     })
   }
